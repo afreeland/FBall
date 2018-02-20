@@ -18,7 +18,18 @@ const char *password = "password";
 
 AsyncWebServer server(80);
 
+const int tiltSwitch = 34;
+int reading; // Current reading from tilt switch
+int previous = LOW; // Previous reading from tilt switch
+int shakeCount = 0; // We want to keep track of how many shakes we have had
+
+
+// The following variables are long because they will quickly be too large to be int
+long _time; // The last time we logged a value
+long debounce = 500; // The debounce time for collecting shake input 
+
 void setup() {
+  pinMode(tiltSwitch, INPUT);
   // put your setup code here, to run once:
   Serial.begin(115200);
   
@@ -92,10 +103,8 @@ void setup() {
 
 void save_string_to_eeprom(char val[]){
   
-  for(int i = 0; i < (strlen(val) - 1); i++){
-    
+  for(int i = 0; i < (strlen(val)); i++){
       EEPROM.write(i, val[i]);
-    
   }
 
 }
@@ -118,16 +127,43 @@ void clear_eeprom(){
 }
 
 void loop() {
-  delay(3000);
-  
-  Serial.println(" bytes read from Flash . Values are:");
-  for (int i = 0; i < EEPROM_SIZE; i++)
-  {
-    Serial.print(byte(EEPROM.read(i))); Serial.print(" ");
+  delay(20);
+
+  // Lets get the current reading from our tilt switch
+  reading = digitalRead(tiltSwitch);
+  Serial.println("Current: " + String(reading));
+
+  // See if our current reading is different than the last one due to being shaked
+  if(reading != previous){
+    // We have a new value, lets reset our timer to start tracking duration of new state
+    _time = millis();
+    Serial.println("Resetting time");
   }
-  read_string_from_eeprom();
-  Serial.println("Buffer");
-  String str(EEPROM_BUFFER);
-  Serial.println(str );
+
+  // Get reading of current millis and compare it to how long we have had a new tiltSwitch state
+  // If the tiltSwitch has been in its new state longer than our debounc threshold than we can
+  // assume they shook the device and we need to capture their action
+//  if ((millis() - _time) > debounce) {
+//    shakeCount++;
+//    Serial.println("Shake Count: " + String(shakeCount));
+//    
+//    previous = reading;
+//    
+//  }
+
+  
+  
+  
+//  Serial.println("Tilt switch: " + String(val));
+//  Serial.println(" bytes read from Flash . Values are:");
+//  for (int i = 0; i < EEPROM_SIZE; i++)
+//  {
+//    Serial.print(byte(EEPROM.read(i))); Serial.print(" ");
+//  }
+//  read_string_from_eeprom();
+//  
+//  String str(EEPROM_BUFFER);
+//  Serial.print("EEPROM: ");
+//  Serial.println(str );
 
 }
